@@ -1,16 +1,16 @@
 package rope
 
-import (
-	"unicode/utf8"
-)
-
-type Node struct {
-	val   string
-	len   int
-	Left  *Node
-	Right *Node
+type RopeNode struct {
+	Left   *RopeNode // left child
+	Right  *RopeNode //right child
+	weight int       //left child size
+	// height int       //for balancing
+	Val string //sub-string if leaf node else empty
 }
 
-func NewNode(val string) *Node {
-	return &Node{val, utf8.RuneCount([]byte(val)), nil, nil}
+func NewRopeNode(weight int, val string) *RopeNode {
+	return &RopeNode{
+		weight: weight,
+		Val:    val,
+	}
 }
