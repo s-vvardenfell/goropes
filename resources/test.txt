@@ -1,0 +1,1 @@
+A sling (rope, cord) is a data structure that allows you to efficiently store and process long strings, such as text.
