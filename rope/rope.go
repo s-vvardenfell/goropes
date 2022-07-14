@@ -50,7 +50,11 @@ func NewRopeFromReader(r io.Reader, leafsize int) (*Rope, error) {
 }
 
 // func NewRopeFromSlice(val []string, leafsize int) (*Rope, error) {
-
+// 	sb := strings.Builder{}
+// 	for i := range val {
+// 		sb.WriteString(val[i])
+// 	}
+// 	return NewRopeFromString(sb.String(), leafsize)
 // }
 
 func inOrderRecursive(n *RopeNode, tr *[]string) {
