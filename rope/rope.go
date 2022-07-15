@@ -45,7 +45,7 @@ func NewRopeFromString(raw string, leafsize int) (*Rope, error) {
 	r.raw = raw
 	r.leafsize = leafsize
 	r.Root = r.createRope(0, len(raw)-1)
-	r.Root = update(r.Root)
+	// r.Root = update(r.Root) // may need balancing after that
 	return &r, nil
 }
 
@@ -84,16 +84,17 @@ func (r *Rope) String() string {
 }
 
 func update(root *RopeNode) *RopeNode {
-	if root != nil || root.Val != "" { // comparison with "" won't work with runes
+	if root == nil || root.Val != "" { // comparison with "" won't work with runes
 		return root
 	}
+
 	leftMost, rightMost := root.Right, root.Left
 
-	for leftMost != nil && leftMost.Val == "" {
+	for leftMost == nil && leftMost.Val == "" {
 		leftMost = leftMost.Left
 	}
 
-	for rightMost != nil && rightMost.Val == "" {
+	for rightMost == nil && rightMost.Val == "" {
 		rightMost = rightMost.Right
 	}
 
@@ -111,7 +112,7 @@ func update(root *RopeNode) *RopeNode {
 // Returns a rope with single character at Root
 func (r *Rope) find(root *RopeNode, idx int) (*Rope, error) {
 	if idx < root.weight {
-		if root == nil && root.Val == "" {
+		if root != nil && root.Val == "" {
 			return r.find(root.Left, idx)
 		}
 		return NewRopeFromString(string(root.Val[idx]), r.leafsize)
@@ -134,46 +135,101 @@ func (r *Rope) Find(idx int) (*Rope, error) {
 	return r.find(r.Root, idx)
 }
 
-// //TODO
-// func (r *Rope) SetLeafSize(val int) error {
-// 	if val == r.leafsize {
-// 		return fmt.Errorf("rope already has leafsize %d", val)
-// 	}
-// 	if val < 0 {
-// 		return errors.New("leafsize must be positive integer")
-// 	}
-// 	if val < 4 {
-// 		logrus.Warning(
-// 			"Smaller leafsizes will cause performance issues. Use big integers like 8, 16, 32, 64")
-// 	}
-// 	r.leafsize = val
-// 	r.Root = r.refresh(r.Root)
-// 	return nil
-// }
+func (r *Rope) concat(leftRoot *RopeNode, rightRoot *RopeNode, needUpdate bool, root *RopeNode) *RopeNode {
+	if leftRoot != nil && rightRoot != nil {
+		countLeft := r.Size(leftRoot)
 
-// //TODO
-// func (r *Rope) refresh(n *RopeNode) *RopeNode {
-// 	return n
-// }
+		if rightRoot.Val != "" {
+			countRight := r.Size(rightRoot)
+			total := countLeft + countRight
+
+			if total <= r.leafsize {
+				leftThread := leftRoot.Left
+				rightRoot.Val = leftRoot.Val + rightRoot.Val
+				rightRoot.weight = len(rightRoot.Val)
+				rightRoot.Left = leftThread
+
+				if leftThread != nil {
+					leftThread.Right = rightRoot
+				}
+
+				r.Delete(leftRoot)
+				return rightRoot
+			}
+		}
+
+		if root == nil {
+			root = NewRopeNode(countLeft, "")
+		} else {
+			root.weight = countLeft
+			root.Val = ""
+		}
+
+		root.Left, root.Right = root.Right, root.Left
+
+		// if needUpdate {
+		// 	root = r.update(root)
+		// 	return r.balance(root)
+		// }
+	}
+
+	if leftRoot != nil {
+		return leftRoot
+	}
+
+	if rightRoot != nil {
+		return rightRoot
+	}
+	return nil
+}
+
+func (r *Rope) Concat(other *Rope, inplace bool) *Rope {
+	other.leafsize = r.leafsize
+	newRoot := r.concat(r.Root, other.Root, true, nil)
+
+	if inplace {
+		r.Root = newRoot
+		r.size = other.size
+		return r
+	}
+
+	newRoot = r.copy(newRoot)
+	newRope := Rope{leafsize: r.leafsize}
+
+	newRope.Root = newRoot
+	newRope.size = r.size + other.size
+	return &newRope
+}
+
+func (r *Rope) copy(n *RopeNode) *RopeNode {
+	if n != nil {
+		newNode := NewRopeNode(n.weight, n.Val)
+		newNode.height = n.height
+
+		if n.Val != "" {
+			return newNode
+		}
+
+		newNode.Left = r.copy(n.Left)
+		newNode.Right = r.copy(n.Right)
+		return newNode //update(newNode) //TODO
+	}
+	return n
+}
+
+func (r *Rope) Delete(n *RopeNode) int {
+	return r.leafsize
+}
 
 func (r *Rope) LeafSize() int {
 	return r.leafsize
 }
 
-//WRONG ANSWER RETURNS - need fix in ctor
 func (r *Rope) RopeSize() int {
 	return r.size
 }
 
-// Returns visual of Rope tree
-func (r *Rope) Display() {
-	lines, _, _, _ := r.displayAux(r.Root)
-	for _, line := range lines {
-		fmt.Println(line)
-	}
-}
-
-//TODO should return the same val as RopeSize()? ('size') need tests
+// For inner purposes
 func (r *Rope) Size(root *RopeNode) int {
 	if root == nil {
 		root = r.Root
@@ -189,6 +245,14 @@ func (r *Rope) Size(root *RopeNode) int {
 		head = head.Right
 	}
 	return count
+}
+
+// Returns visual of Rope tree
+func (r *Rope) Display() {
+	lines, _, _, _ := r.displayAux(r.Root)
+	for _, line := range lines {
+		fmt.Println(line)
+	}
 }
 
 // Returns list of strings, width, height and horizontal coordinate of the root
