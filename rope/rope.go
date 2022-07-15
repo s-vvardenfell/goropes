@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+type stringTuple struct {
+	left  string
+	right string
+}
+
 type Rope struct {
 	Root     *RopeNode
 	raw      string //should store runes to work with non-ascii
@@ -17,7 +22,7 @@ type Rope struct {
 
 func (r *Rope) createRope(lo, hi int) *RopeNode {
 	if lo+r.leafsize > hi {
-		r.size += hi - lo - 1
+		r.size += hi - lo + 1
 		return NewRopeNode(hi-lo+1, r.raw[lo:hi+1])
 	}
 
@@ -129,24 +134,6 @@ func (r *Rope) Find(idx int) (*Rope, error) {
 	return r.find(r.Root, idx)
 }
 
-//TODO should return the same val as RopeSize()? ('size') need tests
-func (r *Rope) Size(root *RopeNode) int {
-	if root == nil {
-		root = r.Root
-	}
-	head := root
-	count := 0
-
-	for head != nil {
-		count += head.weight
-		if head.Val != "" {
-			break
-		}
-		head = head.Right
-	}
-	return count
-}
-
 // //TODO
 // func (r *Rope) SetLeafSize(val int) error {
 // 	if val == r.leafsize {
@@ -186,6 +173,24 @@ func (r *Rope) Display() {
 	}
 }
 
+//TODO should return the same val as RopeSize()? ('size') need tests
+func (r *Rope) Size(root *RopeNode) int {
+	if root == nil {
+		root = r.Root
+	}
+	head := root
+	count := 0
+
+	for head != nil {
+		count += head.weight
+		if head.Val != "" {
+			break
+		}
+		head = head.Right
+	}
+	return count
+}
+
 // Returns list of strings, width, height and horizontal coordinate of the root
 func (r *Rope) displayAux(root *RopeNode) ([]string, int, int, int) {
 	// no child case
@@ -214,8 +219,14 @@ func (r *Rope) displayAux(root *RopeNode) ([]string, int, int, int) {
 			rigth = append(rigth, strings.Repeat(" ", m))
 		}
 	}
-	// zippedLines := zip(left, rigth)
+
+	zippedLines := zip(left, rigth)
 	lines := []string{firstLine, secondLine}
+
+	for i := range zippedLines {
+		lines = append(lines, zippedLines[i].left+strings.Repeat(" ", u)+zippedLines[i].right)
+	}
+
 	return lines, n + m + u, max(p, q) + 2, n + u/2
 }
 
@@ -226,12 +237,17 @@ func visualizer(root *RopeNode) string {
 	return strconv.Itoa(root.weight)
 }
 
-// func zip(left, right []string) string {
-// 	if root.Val != "" {
-// 		return root.Val
-// 	}
-// 	return strconv.Itoa(root.weight)
-// }
+func zip(a []string, b []string) []stringTuple /*, error)*/ {
+	// if len(a) != len(b) {
+	// 	return nil, fmt.Errorf("zip: arguments length must be same ")
+	// }
+
+	var t []stringTuple
+	for index, value := range a {
+		t = append(t, stringTuple{value, b[index]})
+	}
+	return t
+}
 
 func max(a, b int) int {
 	if a > b {
