@@ -1,16 +1,16 @@
 package rope
 
-type RopeNode struct {
-	Left   *RopeNode // left child
-	Right  *RopeNode //right child
-	weight int       //left child size
-	// height int       //for balancing
-	Val string //sub-string if leaf node else empty
+type Node struct {
+	Left   *Node // left child
+	Right  *Node // right child
+	Weight int   // left child size
+	// Height int   // for balancing
+	Data []rune
 }
 
-func NewRopeNode(weight int, val string) *RopeNode {
-	return &RopeNode{
-		weight: weight,
-		Val:    val,
+func NewNode(weight int, data []rune) *Node {
+	return &Node{
+		Weight: weight,
+		Data:   data,
 	}
 }
