@@ -7,38 +7,38 @@ import (
 )
 
 type GoRope struct {
-	Root     *Node
-	RawData  []rune
-	Size     int
-	LeafSize int
+	root     *Node
+	rawData  []rune
+	size     int
+	leafSize int
 }
 
-func NewGoRopeFromString(inStr string, leafSize int) (*GoRope, error) {
-	if inStr == "" {
-		return nil, errors.New("argument 'inStr' must not be an empty string")
+func NewGoRopeFromString(in string, leafSize int) (*GoRope, error) {
+	if in == "" {
+		return nil, errors.New("argument 'in' must not be an empty string")
 	}
 	if leafSize <= 0 {
 		return nil, errors.New("leafSize must be positive integer")
 	}
 
-	rawData := make([]rune, 0, utf8.RuneCountInString(inStr))
-	for _, r := range inStr {
+	rawData := make([]rune, 0, utf8.RuneCountInString(in))
+	for _, r := range in {
 		rawData = append(rawData, r)
 	}
 
 	r := &GoRope{
-		RawData:  rawData,
-		LeafSize: leafSize,
+		rawData:  rawData,
+		leafSize: leafSize,
 	}
 
-	r.Root = r.createRope(0, len(rawData)-1)
+	r.root = r.createRope(0, len(rawData)-1)
 	return r, nil
 }
 
 func (r *GoRope) createRope(left, right int) *Node {
-	if left+r.LeafSize > right {
-		r.Size += right - left + 1
-		return NewNode(right-left+1, r.RawData[left:right+1])
+	if left+r.leafSize > right {
+		r.size += right - left + 1
+		return NewNode(right-left+1, r.rawData[left:right+1])
 	}
 
 	mid := (left + right) / 2
@@ -50,7 +50,7 @@ func (r *GoRope) createRope(left, right int) *Node {
 
 func (r *GoRope) String() string {
 	traversal := make([]string, 0)
-	inOrderRecursive(r.Root, &traversal)
+	inOrderRecursive(r.root, &traversal)
 	sb := strings.Builder{}
 	for i := range traversal {
 		sb.WriteString(traversal[i])
@@ -60,8 +60,72 @@ func (r *GoRope) String() string {
 
 func inOrderRecursive(n *Node, tr *[]string) {
 	if n != nil {
+		if n.Data != nil {
+			*tr = append(*tr, string(n.Data))
+		}
 		inOrderRecursive(n.Left, tr)
-		*tr = append(*tr, string(n.Data))
 		inOrderRecursive(n.Right, tr)
 	}
 }
+
+// Traverse the three and count nodes weight
+// Should give the same value as GoRope.Size() field
+func (r *GoRope) TotalWeight(root *Node) int {
+	if root == nil {
+		root = r.root
+	}
+
+	head := root
+	count := 0
+
+	for head != nil {
+		count += head.Weight
+		if head.Data != nil {
+			break
+		}
+		head = head.Right
+	}
+	return count
+}
+
+// util for Index()
+func index(n *Node, idx int) rune {
+	if n.Weight <= idx && n.Right != nil {
+		return index(n.Right, idx-n.Weight)
+	}
+
+	if n.Left != nil {
+		return index(n.Left, idx)
+	}
+
+	return n.Data[idx]
+}
+
+// Returns a character at the specified index
+func (r *GoRope) Index(idx int) (string, error) {
+	if idx > r.size-1 {
+		return "", errors.New("index out of range")
+	}
+	return string(index(r.root, idx)), nil
+}
+
+// Returns a copy of GoRope underlying data
+func (r *GoRope) RawData() []rune {
+	temp := make([]rune, len(r.rawData))
+	_ = copy(temp, r.rawData)
+	return temp
+}
+
+// Returns amoint of characters
+func (r *GoRope) Size() int {
+	return r.size
+}
+
+// Returns leaf size
+func (r *GoRope) LeafSize() int {
+	return r.leafSize
+}
+
+// func (r *GoRope) Root() *Node {
+// 	return r.root
+// }
