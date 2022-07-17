@@ -109,6 +109,24 @@ func (r *GoRope) Index(idx int) (string, error) {
 	return string(index(r.root, idx)), nil
 }
 
+// Concatenates two Ropes by creating new root node
+func (r *GoRope) Concat(other *GoRope) *GoRope {
+	other.leafSize = r.leafSize
+
+	newRoot := NewNode(r.root.Weight, nil)
+	newRoot.Left = r.root
+	newRoot.Right = other.root
+
+	newRope := GoRope{
+		root:     newRoot,
+		leafSize: r.leafSize,
+	}
+
+	newRope.size = r.TotalWeight(newRope.root)
+
+	return &newRope
+}
+
 // Returns a copy of GoRope underlying data
 func (r *GoRope) RawData() []rune {
 	temp := make([]rune, len(r.rawData))

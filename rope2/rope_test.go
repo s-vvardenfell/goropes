@@ -56,3 +56,16 @@ func Test_Index(t *testing.T) {
 		require.Equal(t, c, string([]rune(stringRu)[idx]))
 	}
 }
+
+func Test_Concat(t *testing.T) {
+	t.Log("concatenating two strings")
+	{
+		r1, err := NewGoRopeFromString(stringEn, 8)
+		require.NoError(t, err)
+		r2, err := NewGoRopeFromString(stringRu, 8)
+		require.NoError(t, err)
+
+		r3 := r1.Concat(r2)
+		require.Equal(t, r3.String(), stringEn+stringRu)
+	}
+}
